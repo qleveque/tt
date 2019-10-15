@@ -15,6 +15,7 @@ if not os.path.isdir(TT_PATH):
     os.mkdir(TT_PATH)
     
 SAVE_FILE = os.path.join(TT_PATH,"save_tt.json")
+CONFIG_FILE = os.path.join(TT_PATH,"config.json")
 
 URL = "http://bluedev/timetracker/"
 NOW = time.strftime("%H:%M")
@@ -35,11 +36,24 @@ PROJECT_MAP = {
 }   
       
 def add_to_tt(data, t):
+    
+    password = None
+    user = None
+    if os.path.isfile(CONFIG_FILE):
+        with open(CONFIG_FILE, "r", encoding = "utf-8") as file:
+            config_data = json.load(file)
+        password = config_data.get("password", None)
+        user = config_data.get("user", None)
+        
+    if password is None or user is None:
+        print("error credentials")
+        return
+        
     login_data = {
-        "login": "lol",
-        "password": "lol",
+        "login": user,
+        "password": password,
         "btn_login": "Connexion",
-        "browser_today": "2019-10-14"
+        "browser_today": TODAY
     }
 
     r = requests.post(URL + "login.php", data=login_data)
@@ -57,7 +71,17 @@ def add_to_tt(data, t):
     }
     
     r = requests.post(URL + "time.php", data=submit_data, cookies = cookies)
-    
+
+def save_config(key, value):
+    config_data = {}
+    if os.path.isfile(CONFIG_FILE):
+        with open(CONFIG_FILE, "r", encoding = "utf-8") as file:
+            config_data = json.load(file)
+    config_data[key] = value
+    with open(CONFIG_FILE, 'w', encoding="utf-8") as file:
+        json.dump(config_data, file)
+        
+
 def save(new_data):
     with open(SAVE_FILE, 'w', encoding="utf-8") as file:
         json.dump(new_data, file)
@@ -110,7 +134,13 @@ def main(command, option, note, hour):
             print("{} {} {}".format(data["command"], data["time"], data["note"]))
         else:
             print("None")
-            
+    
+    elif command == "setpw":
+        save_config("password", option)
+        
+    elif command == "setuser":
+        save_config("user", option)
+    
     else:
         print("error 3")
             
