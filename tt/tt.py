@@ -36,8 +36,8 @@ PROJECT_MAP = {
       
 def add_to_tt(data, t):
     login_data = {
-        "login": "qleveque",
-        "password": "WhentiLeBossDu29",
+        "login": "lol",
+        "password": "lol",
         "btn_login": "Connexion",
         "browser_today": "2019-10-14"
     }
