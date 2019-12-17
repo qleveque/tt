@@ -5,6 +5,7 @@ import os
 import time
 import click
 import re
+from datetime import datetime
 
 
 HOME_PATH = os.path.expanduser('~')
@@ -18,8 +19,9 @@ if not os.path.isdir(TT_PATH):
 SAVE_FILE = os.path.join(TT_PATH,"save_tt.json")
 CONFIG_FILE = os.path.join(TT_PATH,"config.json")
 
+FMT = "%H:%M"
 URL = "http://bluedev/timetracker/"
-NOW = time.strftime("%H:%M")
+NOW = time.strftime(FMT)
 TODAY = time.strftime("%Y-%m-%d")
 YEAR = time.strftime("%Y")
 
@@ -35,8 +37,19 @@ PROJECT_MAP = {
     "as": Project(53, 2),
     "ant": Project(50, 2),
     "tactical": Project(3, 1, "Tactical meeting"),
-    "man": Project(3, 1)
+    "man": Project(3, 1),
+    "rd": Project(68, 1)
 }   
+
+def remaining(data):
+    if data is None:
+        return 0
+    t = data.get("time", None)
+    if time is None:
+        return 0
+    tdelta = datetime.strptime(NOW, FMT) - datetime.strptime(t, FMT)
+    r = tdelta.total_seconds()/(60*60)
+    return r
 
 def login(data):
     config_data = load_config()
@@ -57,15 +70,15 @@ def login(data):
     r = requests.post(URL + "login.php", data=login_data)
     return r.cookies
 
-def get_total_hour(data, year):
+def get_hour(data, from_, to_):
     cookies = login(data)
     submit_data = {
         "favorite_report": -1,
         "project": None,
         "task": None,
         "period": None,
-        "start_date": "{}-01-01".format(str(year)),
-        "end_date": "{}-12-31".format(str(year)),
+        "start_date": from_,
+        "end_date": to_,
         "chproject": 1,
         "chstart": 1,
         "chduration": 1,
@@ -79,14 +92,13 @@ def get_total_hour(data, year):
         "fav_report_changed": None
     }
     r = requests.post(URL + "reports.php", data=submit_data, cookies = cookies)
-    format = '<td nowrap class="cellRightAlignedSubtotal">(\\d+:\\d+)</td>'
+    format = '<td nowrap class="cellRightAlignedSubtotal">(\\d+):(\\d+)</td>'
     m = re.search(format, r.text)
     try:
-        return m.group(1)
+        hours, minutes = int(m.group(1)), int(m.group(2))
     except:
-        return "impossible to fetch total time"
-    
-    
+        return 0
+    return hours + minutes/60.0
 
 def add_to_tt(data, t):
     cookies = login(data)
@@ -139,6 +151,10 @@ def remove_data():
 @click.argument('note', required=False, default="")
 @click.option('--start', '-s', help='Start at', default=None)
 def main(command, option, note, start):
+    """
+    Existing commands: stop, start, cancel, show, set_work, set_password, set_user, year, day
+    Existing projects: scrum, al, as, ant, tactical, man, rd
+    """
     data = load_data()
     config = load_config()
     hour = start
@@ -203,15 +219,25 @@ def main(command, option, note, start):
     elif command == "set_password":
         save_config("password", option)
         
-    elif command == "setuser":
+    elif command == "set_user":
         save_config("user", option)
         
-    elif command == "total":
+    elif command == "year":
         if not option:
             option = YEAR
-        tot = get_total_hour(data, option)
+        from_ = "{}-01-01".format(str(option))
+        to_ = "{}-12-31".format(str(option))
+        tot = get_hour(data, from_, to_)
+        tot += remaining(data)
         print(tot)
     
+    elif command == "day":
+        if not option:
+            option = TODAY
+        tot = get_hour(data, option, option)
+        tot += remaining(data)
+        print(tot)
+        
     else:
         print("error 3")    
 
