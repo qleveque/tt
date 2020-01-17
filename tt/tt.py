@@ -1,3 +1,4 @@
+import numpy as np
 import requests
 import sys
 import json
@@ -5,7 +6,7 @@ import os
 import time
 import click
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 HOME_PATH = os.path.expanduser('~')
@@ -20,10 +21,30 @@ SAVE_FILE = os.path.join(TT_PATH,"save_tt.json")
 CONFIG_FILE = os.path.join(TT_PATH,"config.json")
 
 FMT = "%H:%M"
+DATE_FMT = "%Y-%m-%d"
 URL = "http://bluedev/timetracker/"
 NOW = time.strftime(FMT)
-TODAY = time.strftime("%Y-%m-%d")
+TODAY = time.strftime(DATE_FMT)
 YEAR = time.strftime("%Y")
+
+HOURS_PER_WEEK = 41
+HOURS_PER_DAY = HOURS_PER_WEEK/5
+DAYS_OFF = 20
+
+PUBLIC_HOLIDAY = ["2020-01-01",
+                  "2020-01-02",
+                  "2020-04-05",
+                  "2020-04-10",
+                  "2020-04-12",
+                  "2020-04-13",
+                  "2020-05-21",
+                  "2020-05-31",
+                  "2020-06-01",
+                  "2020-08-01",
+                  "2020-09-20",
+                  "2020-09-21",
+                  "2020-12-25",
+                  ]
 
 class Project:
     def __init__(self, project, task, note = ""):
@@ -99,6 +120,10 @@ def get_hour(data, from_, to_):
     except:
         return 0
     return hours + minutes/60.0
+
+def get_days_off():
+    config_data = load_config()
+    return config_data.get("days_off", [])
 
 def add_to_tt(data, t):
     cookies = login(data)
@@ -237,7 +262,55 @@ def main(command, option, note, start):
         tot = get_hour(data, option, option)
         tot += remaining(data)
         print(tot)
-        
+
+    elif command == "overtime" or command == "ot":
+        holidays = PUBLIC_HOLIDAY + get_days_off()
+        working_day = np.busday_count(YEAR, TODAY, weekmask='1111100', holidays=holidays)
+        working_hours = working_day * HOURS_PER_DAY
+
+        from_ = "{}-01-01".format(str(YEAR))
+        yesterday = (datetime.now() - timedelta(1)).strftime(DATE_FMT)
+        worked_hours = get_hour(data, from_, yesterday)
+
+        worked_hours_today = get_hour(data, TODAY, TODAY) + remaining(data)
+        worked_hours += worked_hours_today
+
+        if worked_hours_today < HOURS_PER_DAY:
+            working_hours += worked_hours_today
+            should_work_until = datetime.strptime(NOW, FMT) \
+                                + timedelta(hours=(HOURS_PER_DAY - worked_hours_today))
+            print("Your day is not done, you should work until",
+                  datetime.strftime(should_work_until, FMT))
+        else:
+            working_hours += HOURS_PER_DAY
+            print("Well, imma head out ! {} overtime hours today !"
+                  .format(round(worked_hours_today - HOURS_PER_DAY, 2)))
+
+        print("You worked {} hours in {}:".format(round(worked_hours, 2), YEAR))
+        print("You should have worked at least:", working_hours)
+        overtime = round(worked_hours - working_hours, 2)
+
+        if overtime >= 0:
+            print("You have {} overtime hours. GG!".format(overtime))
+        else:
+            print("Uh oh, you are {} late! Gotta catch up!".format(-overtime))
+
+    elif command == "public-holiday" or command == "public":
+        print("Here are the public holidays for {}:".format(YEAR))
+        print(PUBLIC_HOLIDAY)
+
+    elif command == "holiday":
+        off = get_days_off()
+        off_nb = len(off)
+        if not off_nb:
+            print("You have no holidays registered in TT, add them in {} if needed"
+                  .format(CONFIG_FILE))
+            return
+        print("You have used {} of your {} off days so far".format(off_nb, YEAR))
+        left = DAYS_OFF - off_nb
+        print("You have {} days left !".format(max(0, left)))
+        print("Here is what you have used:\n{}".format(off))
+
     else:
         print("error 3")    
 
