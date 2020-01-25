@@ -1,0 +1,10 @@
+# pychar files
+.idea
+venv
+
+#build files
+build
+dist
+tt.egg-info
+tt/__init__.pyc
+tt/__pycache__
