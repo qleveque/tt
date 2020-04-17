@@ -17,7 +17,7 @@ CONSOLE_SCRIPTS = ['tt=tt.tt:main']
 def requirements():
     with open('requirements.txt','r',encoding = 'utf-8') as f:
         lines = f.readlines()
-        return [line.replace('==','>=').strip() for line in lines]
+        return lines
 REQUIREMENTS = requirements()
 
 #readme
