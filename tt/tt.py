@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 import requests
 import json
@@ -80,7 +82,7 @@ TASK_MAP = {
     "as": Task(53, 2, 'as', note='ANT server'),
     "ant": Task(50, 2, 'ant', note='ANT'),
     "man": Task(3, 1, 'man', note='Management'),
-    "rd": Task(68, 1, 'rd', note='R&D')
+    "rd": Task(68, 2, 'rd', note='R&D')
 }
 
 
@@ -243,6 +245,10 @@ def remove_data(config):
         del config['data']
         save_config(config)
 
+def hours_to_hours_mn(hours: float) -> Tuple[int, int]:
+    overtime_minutes = int((hours - int(hours)) * 60)
+    overtime_hours = int(hours)
+    return overtime_hours, overtime_minutes
 
 def main():
     """
@@ -340,7 +346,7 @@ def main():
     elif command == "overtime" or command == "ot":
         holidays = PUBLIC_HOLIDAY + config.get("days_off", [])
         working_day = np.busday_count(YEAR, TODAY, weekmask='1111100', holidays=holidays)
-        working_hours = working_day * HOURS_PER_DAY
+        working_hours = (working_day * HOURS_PER_DAY) * int(config.get("percentage", 100))/100
 
         from_ = "{}-01-01".format(str(YEAR))
         yesterday = (datetime.now() - timedelta(1)).strftime(DATE_FMT)
@@ -357,15 +363,18 @@ def main():
                   datetime.strftime(should_work_until, FMT))
         else:
             working_hours += HOURS_PER_DAY
-            print("Well, imma head out ! {} overtime hours today !"
-                  .format(round(worked_hours_today - HOURS_PER_DAY, 2)))
+            overtime_hours, overtime_minutes =\
+                hours_to_hours_mn((worked_hours_today - HOURS_PER_DAY))
+            print(f"Well, imma head out ! {overtime_hours}h {overtime_minutes}mn"
+                  f" of overtime today !")
 
         print("You worked {} hours in {}:".format(round(worked_hours, 2), YEAR))
         print("You should have worked at least:", working_hours)
         overtime = round(worked_hours - working_hours, 2)
 
         if overtime >= 0:
-            print("You have {} overtime hours. GG!".format(overtime))
+            overtime_h, overtime_mn = hours_to_hours_mn(overtime)
+            print("You have {}h {}mn overtime hours. GG!".format(overtime_h, overtime_mn))
         else:
             print("Uh oh, you are {} late! Gotta catch up!".format(-overtime))
 
