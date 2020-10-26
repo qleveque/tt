@@ -82,7 +82,8 @@ TASK_MAP = {
     "as": Task(53, 2, 'as', note='ANT server'),
     "ant": Task(50, 2, 'ant', note='ANT'),
     "man": Task(3, 1, 'man', note='Management'),
-    "rd": Task(68, 2, 'rd', note='R&D')
+    "rd": Task(68, 2, 'rd', note='R&D'),
+    "ts": Task(68, 2, 'ts', note='Test setup'),
 }
 
 
