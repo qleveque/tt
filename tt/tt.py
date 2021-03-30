@@ -345,8 +345,7 @@ def main():
         print(tot)
 
     elif command == "overtime" or command == "ot":
-        holidays = PUBLIC_HOLIDAY + config.get("days_off", [])
-        working_day = np.busday_count(YEAR, TODAY, weekmask='1111100', holidays=holidays)
+        working_day = np.busday_count(YEAR, TODAY, weekmask='1111100', holidays=PUBLIC_HOLIDAY)
         working_hours = (working_day * HOURS_PER_DAY) * int(config.get("percentage", 100))/100
 
         from_ = "{}-01-01".format(str(YEAR))
