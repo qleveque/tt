@@ -30,7 +30,6 @@ YEAR = time.strftime("%Y")
 
 HOURS_PER_WEEK = 42
 HOURS_PER_DAY = HOURS_PER_WEEK/5
-DAYS_OFF = 25
 
 PUBLIC_HOLIDAY = ["2021-01-01",
                   "2021-01-02",
@@ -374,25 +373,13 @@ def main():
 
         if overtime >= 0:
             overtime_h, overtime_mn = hours_to_hours_mn(overtime)
-            print("You have {}h {}mn overtime hours. GG!".format(overtime_h, overtime_mn))
+            print("You have {}h {}mn overtime hours. GG! 🍺🥳".format(overtime_h, overtime_mn))
         else:
-            print("Uh oh, you are {} late! Gotta catch up!".format(-overtime))
+            print("Uh oh, you are {} late! Gotta catch up! 🤡".format(-overtime))
 
     elif command == "public-holiday" or command == "public":
         print("Here are the public holidays for {}:".format(YEAR))
         print(PUBLIC_HOLIDAY)
-
-    elif command == "holiday":
-        off = config.get("days_off", [])
-        off_nb = len(off)
-        if not off_nb:
-            print("You have no holidays registered in TT, add them in {} if needed"
-                  .format(CONFIG_FILE))
-            return
-        print("You have used {} of your {} off days so far".format(off_nb, YEAR))
-        left = DAYS_OFF - off_nb
-        print("You have {} days left !".format(max(0, left)))
-        print("Here is what you have used:\n{}".format(off))
 
     elif command == "projects":
         for name, value in TASK_MAP.items():
