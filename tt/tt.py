@@ -22,7 +22,7 @@ SAVE_FILE = os.path.join(TT_PATH,"save_tt.json")
 CONFIG_FILE = os.path.join(TT_PATH,"config.json")
 
 FMT = "%H:%M"
-DATE_FMT = "%Y-%m-%d"
+DATE_FMT = "%d.%m.%Y"
 URL = "http://bluedev/timetracker/"
 NOW = time.strftime(FMT)
 TODAY = time.strftime(DATE_FMT)
@@ -330,8 +330,8 @@ def main():
     elif command == "year":
         if not option:
             option = YEAR
-        from_ = "{}-01-01".format(str(option))
-        to_ = "{}-12-31".format(str(option))
+        from_ = "01.01.{}".format(str(option))
+        to_ = "31.12.{}".format(str(option))
         tot = get_hour(config, from_, to_)
         tot += remaining(data)
         print(tot)
@@ -344,10 +344,10 @@ def main():
         print(tot)
 
     elif command == "overtime" or command == "ot":
-        working_day = np.busday_count(YEAR, TODAY, weekmask='1111100', holidays=PUBLIC_HOLIDAY)
+        working_day = np.busday_count(YEAR, time.strftime("%Y-%m-%d"), weekmask='1111100', holidays=PUBLIC_HOLIDAY)
         working_hours = (working_day * HOURS_PER_DAY) * int(config.get("percentage", 100))/100
 
-        from_ = "{}-01-01".format(str(YEAR))
+        from_ = "01.01.{}".format(str(YEAR))
         yesterday = (datetime.now() - timedelta(1)).strftime(DATE_FMT)
         worked_hours = get_hour(config, from_, yesterday)
 
